@@ -220,6 +220,78 @@ footer {
 .footer-bottom span {
     color: #e74c3c;
 }
+        
+        .hero-section {
+            background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            color: white;
+            padding: 300px 20px;
+            text-align: center;
+        }
+
+        #allproducts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            justify-items: center;
+        }
+
+        .price {
+            font-size: 16px;
+            color: #e91e63;
+        }
+
+        .imag {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 220px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        button {
+            background-color: rgb(58, 58, 245);
+            color: white;
+            border-radius: 10px;
+            padding: 10px 15px;
+            cursor: pointer;
+
+        }
+
+        .search-box {
+            text-align: center;
+            padding: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+        }
+
+        .content {
+            text-align: center;
+        }
+
+        .search-box input {
+            padding: 10px;
+            width: 300px;
+            border-radius: 10px;
+
+        }
 </style>
 
         <div class="footer-container">
