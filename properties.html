@@ -136,13 +136,13 @@
         <li><a href="index.html">home</a></li>
         <li><a href="properties.html" class="active-link">properties</a></li>
         <li><a href="favorites.html">favorites</a></li>
-        <li><a href="features.html">features</a></li>
         <li><a href="contact.html">contact</a></li>
         <li>❤️</li>
- <li id="s" 
-                    style="background-color: rgb(219, 32, 88); padding:0 5px 0 5px; color: aliceblue; border-radius: 10px;">
-                    <script>document.getElementById("s").innerHTML = JSON.parse(localStorage.getItem('favorite_properties')).length;</script>
-                </li>      </ul>
+        <li id="s" 
+            style="background-color: rgb(219, 32, 88); padding:0 5px 0 5px; color: aliceblue; border-radius: 10px;">
+            <script>document.getElementById("s").innerHTML = JSON.parse(localStorage.getItem('favorite_properties') || '[]').length;</script>
+        </li>
+      </ul>
     </div>
   </nav>
 
@@ -160,15 +160,7 @@
           <label for="search">search</label>
           <input type="search" placeholder="search properties" name="search" id="search" class="form-control" />
         </div>
-        <div style="flex: 1;">
-          <label for="property-type">property type</label>
-          <select name="property-type" id="property-type" class="form-control">
-            <option value="apartment">apartment</option>
-            <option value="house">house</option>
-            <option value="studio">studio</option>
-            <option value="flat">flat</option>
-          </select>
-        </div>
+
         <div style="flex: 1;">
           <label for="maxprice">max price</label>
           <select name="maxprice" id="maxprice" class="form-control"></select>
@@ -178,7 +170,7 @@
           <select name="minprice" id="minprice" class="form-control"></select>
         </div>
         <div>
-          <button class="form-control" style="background: #37bd7f; width: 150px; padding: 10px;">
+          <button class="form-control" onclick="searchProperties()" style="background: #37bd7f; width: 150px; padding: 10px;">
             <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="48px" fill="#FFFFFF">
               <path
                 d="M440-160q-17 0-28.5-11.5T400-200v-240L161-745q-14-17-4-36t31-19h584q21 0 31 19t-4 36L560-440v240q0 17-11.5 28.5T520-160h-80Zm40-276 240-304H240l240 304Z" />
@@ -189,7 +181,14 @@
     </div>
 
     <div class="container py-5">
-      <div class="row" id="allproducts"></div>
+      <div class="row" id="allproducts">
+        <div class="col-12 text-center py-5">
+          <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3">Loading properties...</p>
+        </div>
+      </div>
     </div>
   </main>
  
@@ -240,11 +239,208 @@
         <span>© 2024 Luxury Estates. جميع الحقوق محفوظة.</span>
         <span>Designed with <span style="color:#dc3545;">❤</span> for you</span>
         </div>
+</footer>
 
-    </footer>
+<script>
+  // Global variable to store properties data
+  let propertiesData = [];
 
+  // Initialize the page
+  document.addEventListener('DOMContentLoaded', function() {
+    // Fetch properties data from the API
+    fetchProperties();
+    
+    // Add event listener for search input
+    document.getElementById('search').addEventListener('input', function() {
+      searchProperties();
+    });
+    
+    // Add event listeners for price filters
+    document.getElementById('minprice').addEventListener('change', searchProperties);
+    document.getElementById('maxprice').addEventListener('change', searchProperties);
+  });
 
+  // Function to fetch properties from the API
+  function fetchProperties() {
+    fetch('https://edu-me01.github.io/Json-Data/properties.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        propertiesData = data.properties;
+        // Populate price filters after data is loaded
+        populatePriceFilters();
+        // Display all properties initially
+        displayProperties(propertiesData);
+      })
+      .catch(error => {
+        console.error('Error fetching properties:', error);
+        const container = document.getElementById('allproducts');
+        container.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <h3 class="text-danger">Error loading properties</h3>
+            <p>${error.message}</p>
+            <button onclick="fetchProperties()" class="btn btn-primary mt-3">Try Again</button>
+          </div>
+        `;
+      });
+  }
+
+  // Function to populate price filters
+  function populatePriceFilters() {
+    const minPriceSelect = document.getElementById('minprice');
+    const maxPriceSelect = document.getElementById('maxprice');
+    
+    // Clear existing options
+    minPriceSelect.innerHTML = '';
+    maxPriceSelect.innerHTML = '';
+    
+    // Get all prices and sort them
+    const prices = propertiesData.map(property => property.price).sort((a, b) => a - b);
+    
+    // Create price ranges
+    const priceRanges = [
+      { label: "Any", value: 0 },
+      { label: "Under $500,000", value: 500000 },
+      { label: "$500,000 - $1,000,000", value: 1000000 },
+      { label: "$1,000,000 - $2,000,000", value: 2000000 },
+      { label: "$2,000,000 - $3,000,000", value: 3000000 },
+      { label: "$3,000,000 - $4,000,000", value: 4000000 },
+      { label: "Over $4,000,000", value: 4000001 }
+    ];
+    
+    // Populate both select elements
+    priceRanges.forEach(range => {
+      const minOption = document.createElement('option');
+      minOption.value = range.value;
+      minOption.textContent = range.label;
+      minPriceSelect.appendChild(minOption);
+      
+      const maxOption = document.createElement('option');
+      maxOption.value = range.value;
+      maxOption.textContent = range.label;
+      maxPriceSelect.appendChild(maxOption);
+    });
+    
+    // Set default max price to the highest value
+    maxPriceSelect.value = 4000001;
+  }
+
+  // Function to search properties based on filters
+  function searchProperties() {
+    const searchTerm = document.getElementById('search').value.toLowerCase();
+    const minPrice = parseInt(document.getElementById('minprice').value) || 0;
+    const maxPrice = parseInt(document.getElementById('maxprice').value) || Infinity;
+    
+    // Filter properties
+    const filteredProperties = propertiesData.filter(property => {
+      // Search term matches title, location, or description
+      const matchesSearch = 
+        property.title.toLowerCase().includes(searchTerm) ||
+        property.location.toLowerCase().includes(searchTerm) ||
+        property.description.toLowerCase().includes(searchTerm);
+      
+      // Price is within range
+      const matchesPrice = 
+        (minPrice === 0 || property.price >= minPrice) && 
+        (maxPrice === 4000001 || property.price <= maxPrice);
+      
+      return matchesSearch && matchesPrice;
+    });
+    
+    // Display filtered properties
+    displayProperties(filteredProperties);
+  }
+
+  // Function to display properties
+  function displayProperties(properties) {
+    const container = document.getElementById('allproducts');
+    container.innerHTML = '';
+    
+    if (properties.length === 0) {
+      container.innerHTML = '<div class="col-12 text-center py-5"><h3>No properties found matching your criteria</h3></div>';
+      return;
+    }
+    
+    properties.forEach(property => {
+      const col = document.createElement('div');
+      col.className = 'col-md-6 col-lg-4 col-xl-3 mb-4';
+      
+      col.innerHTML = `
+        <div class="card h-100">
+          <div style="height: 200px; overflow: hidden;">
+            <img src="${property.images[0]}" class="card-img-top h-100 w-100 object-fit-cover" alt="${property.title}">
+          </div>
+          <div class="card-body">
+            <h5 class="card-title">${property.title}</h5>
+            <p class="card-text text-muted">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
+                <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
+                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+              </svg>
+              ${property.location}
+            </p>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-success">${property.type}</span>
+              <span class="text-success fw-bold">$${property.price.toLocaleString()}</span>
+            </div>
+            <div class="d-flex justify-content-between text-muted small mb-3">
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house-door" viewBox="0 0 16 16">
+                  <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4H2.5z"/>
+                </svg>
+                ${property.bedrooms} beds
+              </span>
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-droplet" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M7.21.8C7.69.295 8 0 8 0c.109.363.234.708.371 1.038.812 1.946 2.073 3.35 3.197 4.6C12.878 7.096 14 8.345 14 10a6 6 0 0 1-12 0C2 6.668 5.58 2.517 7.21.8zm.413 1.021A31.25 31.25 0 0 0 5.794 3.99c-.726.95-1.436 2.008-1.96 3.07C3.304 8.133 3 9.138 3 10a5 5 0 0 0 10 0c0-1.201-.796-2.157-2.181-3.7l-.03-.032C9.75 5.11 8.5 3.72 7.623 1.82z"/>
+                  <path fill-rule="evenodd" d="M4.553 7.776c.82-1.641 1.717-2.753 2.093-3.13l.708.708c-.29.29-1.128 1.311-1.907 2.87l-.894-.448z"/>
+                </svg>
+                ${property.bathrooms} baths
+              </span>
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrows-angle-expand" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707z"/>
+                </svg>
+                ${property.squareFeet} sqft
+              </span>
+            </div>
+            <button onclick="addToFavorites(${property.id})" class="btn btn-outline-danger w-100">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
+                <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+              </svg>
+              Add to Favorites
+            </button>
+          </div>
+        </div>
+      `;
+      
+      container.appendChild(col);
+    });
+  }
+
+  // Function to add property to favorites
+  function addToFavorites(propertyId) {
+    let favorites = JSON.parse(localStorage.getItem('favorite_properties') || '[]');
+    
+    // Check if property is already in favorites
+    if (!favorites.includes(propertyId)) {
+      favorites.push(propertyId);
+      localStorage.setItem('favorite_properties', JSON.stringify(favorites));
+      
+      // Update favorites count
+      document.getElementById('s').innerHTML = favorites.length;
+      
+      // Show success message
+      alert('Property added to favorites!');
+    } else {
+      alert('This property is already in your favorites!');
+    }
+  }
+</script>
 
 </body>
-
 </html>
